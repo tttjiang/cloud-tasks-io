@@ -1,0 +1,22 @@
+    private static final String RF_METHOD = "/gwtRequest";
+
+    /**
+     * Creates and returns an initialized {@link RequestFactory} of the given type.
+     */
+    public static RequestFactory getRequestFactory(Context context, Class<? extends RequestFactory> factoryClass) {
+    	RequestFactory requestFactory = RequestFactorySource.create(factoryClass);
+
+        SharedPreferences prefs = Util.getSharedPreferences(context);
+        String authCookie = prefs.getString(Util.AUTH_COOKIE, null);
+
+        URI uri;
+        try {
+            uri = new URI(Util.getBaseUrl(context) + RF_METHOD);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+        requestFactory.initialize(new SimpleEventBus(), new AndroidRequestTransport(uri, authCookie));
+
+        return requestFactory;
+    }
