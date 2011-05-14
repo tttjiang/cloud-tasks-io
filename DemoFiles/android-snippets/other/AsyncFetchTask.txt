@@ -1,0 +1,17 @@
+	        requestFactory.taskRequest().queryTasks().fire(
+	                new Receiver<List<TaskProxy>>() {
+	                    @Override
+	                    public void onSuccess(List<TaskProxy> taskList) {
+	                    	list.addAll(taskList);
+	                    }});
+
+
+
+
+        	newTask = true;
+	        requestFactory.taskRequest().readTask(arguments[0]).fire(
+	                new Receiver<TaskProxy>() {
+	                    @Override
+	                    public void onSuccess(TaskProxy task) {
+	                    	list.add(task);
+	                    }});

@@ -1,0 +1,148 @@
+    private final static int NEW_TASK_REQUEST = 1;
+    private ListView listView;
+    private View progressBar;
+    private TaskAdapter adapter;
+    private AsyncFetchTask task;
+
+
+
+
+    /** Called when the activity is first created. */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+
+
+        setContentView(R.layout.tasklist);
+
+        listView = (ListView) findViewById(R.id.list);
+        progressBar = findViewById(R.id.title_refresh_progress);
+
+        // get the task application to store the adapter which will act as the task storage
+        // for this demo.
+        TaskApplication taskApplication = (TaskApplication) getApplication();
+        adapter = taskApplication.getAdapter(this);
+        listView.setAdapter(adapter);
+
+        listView.setOnItemClickListener(this);
+
+
+
+
+    }
+
+
+
+
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        // only fetch task on start if the registration has happened.
+        SharedPreferences prefs = Util.getSharedPreferences(mContext);
+        String deviceRegistrationID = prefs.getString(Util.DEVICE_REGISTRATION_ID, null);
+        if (deviceRegistrationID != null) {
+        	fetchTasks(-1);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        TaskApplication taskApplication = (TaskApplication) getApplication();
+        taskApplication.setTaskListener(new TaskListener() {
+            public void onTaskUpdated(final String message, final long id) {
+            	runOnUiThread(new Runnable() {
+                    public void run() {
+                        if (TaskChange.UPDATE.equals(message)) {
+                            fetchTasks(id);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        TaskApplication taskApplication = (TaskApplication) getApplication();
+        taskApplication.setTaskListener(null);
+    }
+
+
+    public void fetchTasks(long id) {
+        progressBar.setVisibility(View.VISIBLE);
+        if (task != null) {
+            task.cancel(true);
+        }
+        task = new AsyncFetchTask(this);
+        task.execute(id);
+    }
+
+    public void setTasks(List<TaskProxy> tasks) {
+        progressBar.setVisibility(View.GONE);
+        adapter.setTasks(tasks);
+        adapter.notifyDataSetChanged();
+    }
+
+    public void addTasks(List<TaskProxy> tasks) {
+        progressBar.setVisibility(View.GONE);
+        adapter.addTasks(tasks);
+        adapter.notifyDataSetChanged();
+    }
+
+    public void onAddClick(View view) {
+        Intent intent = new Intent(this, AddTaskActivity.class);
+        startActivityForResult(intent, NEW_TASK_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+        case NEW_TASK_REQUEST:
+            if (resultCode == Activity.RESULT_OK) {
+                final String taskName = data.getStringExtra("task");
+                final String taskDetails = data.getStringExtra("details");
+
+                Calendar c = Calendar.getInstance();
+                c.set(data.getIntExtra("year", 2011),
+                        data.getIntExtra("month", 12),
+                        data.getIntExtra("day", 31));
+                final Date dueDate = c.getTime();
+
+                new AsyncTask<Void, Void, Void>() {
+
+                    @Override
+                    protected Void doInBackground(Void... arg0) {
+                        CloudTasksRequestFactory factory = (CloudTasksRequestFactory) Util
+                                .getRequestFactory(CloudTasksActivity.this,
+                                        CloudTasksRequestFactory.class);
+                        TaskRequest request = factory.taskRequest();
+
+                        TaskProxy task = request.create(TaskProxy.class);
+                        task.setName(taskName);
+                        task.setNote(taskDetails);
+                        task.setDueDate(dueDate);
+
+                        request.updateTask(task).fire();
+
+                        return null;
+                    }
+
+                }.execute();
+            }
+            break;
+        }
+    }
+
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Intent intent = new Intent(this, ViewTaskActivity.class);
+        intent.putExtra("position", position);
+        startActivity(intent);
+    }
+
