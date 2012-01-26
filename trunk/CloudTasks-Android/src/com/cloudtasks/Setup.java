@@ -36,5 +36,5 @@ public class Setup {
      * The C2DM sender ID for the server. A C2DM registration with this name
      * must exist for the app to function correctly.
      */
-    public static final String SENDER_ID = "gwtc2dm@gmail.com";
+    public static final String SENDER_ID = "your_c2dm_account@gmail.com";
 }
