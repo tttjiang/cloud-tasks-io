@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -132,20 +133,34 @@ public class CloudTasksActivity extends Activity implements OnItemClickListener 
         return true;
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	// TODO Auto-generated method stub
+    	switch (item.getItemId()) {
+		case R.id.menu_refresh:
+			fetchTasks(-1);
+			break;
 
+		default:
+			break;
+		}
+    	return super.onOptionsItemSelected(item);
+    }
 
 
 
     @Override
     protected void onStart() {
         super.onStart();
-
-        // only fetch task on start if the registration has happened.
+        // only fetch task on start if an account has been selected
         SharedPreferences prefs = Util.getSharedPreferences(mContext);
-        String deviceRegistrationID = prefs.getString(Util.DEVICE_REGISTRATION_ID, null);
-        if (deviceRegistrationID != null) {
-        	fetchTasks(-1);
+        String deviceRegistrationId = prefs.getString(Util.DEVICE_REGISTRATION_ID, null);
+        if (deviceRegistrationId != null) {
+        		fetchTasks(-1);
         }
+//        else {
+//        		startActivity(new Intent(this,AccountsActivity.class));
+//        }
     }
 
     @Override
